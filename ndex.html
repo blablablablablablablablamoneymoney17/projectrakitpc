@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Monitoring Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --success-gradient: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+      --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      --hover-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .hero-section {
+      background: var(--primary-gradient);
+      color: white;
+      padding: 4rem 0 2rem 0;
+      margin-bottom: 3rem;
+      border-radius: 0 0 50px 50px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.08)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+      opacity: 0.3;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+
+    .project-card {
+      background: white;
+      border: none;
+      border-radius: 20px;
+      box-shadow: var(--card-shadow);
+      transition: all 0.3s ease;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .project-card:hover {
+      transform: translateY(-10px);
+      box-shadow: var(--hover-shadow);
+    }
+
+    .project-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary-gradient);
+    }
+
+    .project-card.completed::before {
+      background: var(--success-gradient);
+    }
+
+    .card-body {
+      padding: 2rem;
+    }
+
+    .project-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-badge {
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-weight: 500;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: none;
+    }
+
+    .status-completed {
+      background: var(--success-gradient);
+      color: white;
+    }
+
+    .status-in-progress {
+      background: var(--warning-gradient);
+      color: white;
+    }
+
+    .date-info {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 10px;
+      margin: 1rem 0;
+      border-left: 4px solid #667eea;
+    }
+
+    .timeline-section {
+      margin-top: 1.5rem;
+    }
+
+    .timeline-title {
+      color: #2c3e50;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .task-item {
+      background: #ffffff;
+      border: 1px solid #e9ecef;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .task-item:hover {
+      border-color: #667eea;
+      transform: translateX(5px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+    }
+
+    .task-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--primary-gradient);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
+    }
+
+    .task-item:hover::before {
+      transform: scaleY(1);
+    }
+
+    .task-name {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 0.25rem;
+    }
+
+    .task-date {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+
+    .chart-container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: var(--card-shadow);
+      padding: 2rem;
+      margin-top: 3rem;
+      max-height: 450px;
+    }
+
+    .chart-title {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 2rem;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .stats-section {
+      margin-bottom: 3rem;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.3s ease;
+      border: none;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      color: #6c757d;
+      font-size: 1rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .progress-ring {
+      width: 60px;
+      height: 60px;
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+    }
+
+    .progress-ring-circle {
+      fill: transparent;
+      stroke: #e9ecef;
+      stroke-width: 4;
+    }
+
+    .progress-ring-progress {
+      fill: transparent;
+      stroke: url(#gradient);
+      stroke-width: 4;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: center;
+    }
+
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2.5rem;
+      }
+      
+      .card-body {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="container">
+      <div class="hero-content text-center">
+        <h1 class="hero-title">
+          <i class="fas fa-chart-line me-3"></i>
+          Project Monitoring
+        </h1>
+        <p class="hero-subtitle">Track your projects with style and precision</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Statistics Section -->
+    <div class="stats-section fade-in">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-number" id="totalProjects">0</div>
+            <div class="stat-label">Total Projects</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-number" id="completedProjects">0</div>
+            <div class="stat-label">Completed</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-number" id="inProgressProjects">0</div>
+            <div class="stat-label">In Progress</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <div id="project-list" class="row g-4 fade-in"></div>
+
+    <!-- Chart Section -->
+    <div class="chart-container fade-in">
+      <h2 class="chart-title">
+        <i class="fas fa-chart-bar me-2"></i>
+        Project Duration Timeline
+      </h2>
+      <canvas id="timelineChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // SVG Gradients for progress rings
+    const svgDefs = `
+      <defs>
+        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+    `;
+
+    // === Data JSON inline ===
+    const data = {
+      "projects": [
+        {
+          "name": "Project A",
+          "status": "In Progress",
+          "start": "2025-08-01",
+          "end": "2025-10-01",
+          "tasks": [
+            { "task": "Analisis", "date": "2025-08-05" },
+            { "task": "Desain", "date": "2025-08-15" },
+            { "task": "Implementasi", "date": "2025-09-01" },
+            { "task": "Testing", "date": "2025-09-20" }
+          ]
+        },
+        {
+          "name": "Project B",
+          "status": "Completed",
+          "start": "2025-07-01",
+          "end": "2025-08-20",
+          "tasks": [
+            { "task": "Riset", "date": "2025-07-05" },
+            { "task": "Development", "date": "2025-07-20" },
+            { "task": "Deployment", "date": "2025-08-15" }
+          ]
+        }
+      ]
+    };
+
+    // === Update Statistics ===
+    function updateStats() {
+      const total = data.projects.length;
+      const completed = data.projects.filter(p => p.status === 'Completed').length;
+      const inProgress = total - completed;
+
+      document.getElementById('totalProjects').textContent = total;
+      document.getElementById('completedProjects').textContent = completed;
+      document.getElementById('inProgressProjects').textContent = inProgress;
+    }
+
+    // === Get Progress Percentage ===
+    function getProgressPercentage(project) {
+      const start = new Date(project.start);
+      const end = new Date(project.end);
+      const now = new Date();
+      
+      if (project.status === 'Completed') return 100;
+      if (now < start) return 0;
+      if (now > end) return 100;
+      
+      const total = end - start;
+      const elapsed = now - start;
+      return Math.round((elapsed / total) * 100);
+    }
+
+    // === Create Progress Ring ===
+    function createProgressRing(percentage) {
+      const circumference = 2 * Math.PI * 26; // radius = 26
+      const strokeDasharray = circumference;
+      const strokeDashoffset = circumference - (percentage / 100) * circumference;
+      
+      return `
+        <svg class="progress-ring" viewBox="0 0 60 60">
+          ${svgDefs}
+          <circle class="progress-ring-circle" cx="30" cy="30" r="26"></circle>
+          <circle class="progress-ring-progress" cx="30" cy="30" r="26" 
+                  style="stroke-dasharray: ${strokeDasharray}; stroke-dashoffset: ${strokeDashoffset};">
+          </circle>
+          <text x="30" y="35" text-anchor="middle" fill="#667eea" font-size="10" font-weight="600">
+            ${percentage}%
+          </text>
+        </svg>
+      `;
+    }
+
+    // === Render project cards ===
+    function renderProjects() {
+      const container = document.getElementById("project-list");
+
+      data.projects.forEach((project, index) => {
+        const progress = getProgressPercentage(project);
+        
+        let tasksHtml = "";
+        project.tasks.forEach(task => {
+          tasksHtml += `
+            <div class="task-item">
+              <div class="task-name">
+                <i class="fas fa-tasks me-2"></i>
+                ${task.task}
+              </div>
+              <div class="task-date">
+                <i class="far fa-calendar me-1"></i>
+                ${new Date(task.date).toLocaleDateString('id-ID', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </div>
+            </div>
+          `;
+        });
+
+        const statusIcon = project.status === 'Completed' ? 'fa-check-circle' : 'fa-clock';
+        const statusClass = project.status === 'Completed' ? 'status-completed' : 'status-in-progress';
+
+        const card = `
+          <div class="col-lg-6 col-md-12">
+            <div class="project-card ${project.status.toLowerCase().replace(' ', '-')}" style="animation-delay: ${index * 0.2}s">
+              ${createProgressRing(progress)}
+              <div class="card-body">
+                <h3 class="project-title">
+                  <i class="fas fa-project-diagram"></i>
+                  ${project.name}
+                </h3>
+                
+                <div class="mb-3">
+                  <span class="status-badge ${statusClass}">
+                    <i class="fas ${statusIcon} me-1"></i>
+                    ${project.status}
+                  </span>
+                </div>
+
+                <div class="date-info">
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-muted">
+                        <i class="fas fa-play me-1"></i>
+                        Mulai
+                      </small>
+                      <div class="fw-semibold">
+                        ${new Date(project.start).toLocaleDateString('id-ID', { 
+                          day: 'numeric', 
+                          month: 'short', 
+                          year: 'numeric' 
+                        })}
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">
+                        <i class="fas fa-flag-checkered me-1"></i>
+                        Selesai
+                      </small>
+                      <div class="fw-semibold">
+                        ${new Date(project.end).toLocaleDateString('id-ID', { 
+                          day: 'numeric', 
+                          month: 'short', 
+                          year: 'numeric' 
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="timeline-section">
+                  <h6 class="timeline-title">
+                    <i class="fas fa-list-ul"></i>
+                    Timeline Tugas
+                  </h6>
+                  ${tasksHtml}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        container.innerHTML += card;
+      });
+    }
+
+    // === Create Chart ===
+    function createChart() {
+      const ctx = document.getElementById("timelineChart").getContext("2d");
+
+      const labels = data.projects.map(p => p.name);
+
+      function getDaysDiff(start, end) {
+        const s = new Date(start);
+        const e = new Date(end);
+        return Math.round((e - s) / (1000 * 60 * 60 * 24));
+      }
+
+      const durations = data.projects.map(p => getDaysDiff(p.start, p.end));
+
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Durasi (hari)",
+            data: durations,
+            backgroundColor: [
+              "rgba(102, 126, 234, 0.8)",
+              "rgba(118, 75, 162, 0.8)",
+              "rgba(86, 171, 47, 0.8)",
+              "rgba(240, 147, 251, 0.8)"
+            ],
+            borderColor: [
+              "rgba(102, 126, 234, 1)",
+              "rgba(118, 75, 162, 1)",
+              "rgba(86, 171, 47, 1)",
+              "rgba(240, 147, 251, 1)"
+            ],
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { 
+              display: false 
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: 'white',
+              bodyColor: 'white',
+              borderColor: 'rgba(102, 126, 234, 1)',
+              borderWidth: 1,
+              cornerRadius: 8,
+              displayColors: false,
+              callbacks: {
+                label: function(context) {
+                  return `Durasi: ${context.parsed.x} hari`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { 
+              title: { 
+                display: true, 
+                text: "Durasi (Hari)",
+                font: { size: 14, weight: 'bold' },
+                color: '#2c3e50'
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.1)'
+              },
+              ticks: {
+                color: '#6c757d'
+              }
+            },
+            y: { 
+              title: { 
+                display: true, 
+                text: "Project",
+                font: { size: 14, weight: 'bold' },
+                color: '#2c3e50'
+              },
+              grid: {
+                display: false
+              },
+              ticks: {
+                color: '#2c3e50',
+                font: { size: 12, weight: '600' }
+              }
+            }
+          },
+          animation: {
+            duration: 2000,
+            easing: 'easeOutQuart'
+          }
+        }
+      });
+    }
+
+    // === Initialize ===
+    document.addEventListener('DOMContentLoaded', function() {
+      updateStats();
+      renderProjects();
+      
+      // Set chart height
+      document.getElementById('timelineChart').style.height = '400px';
+      
+      setTimeout(() => {
+        createChart();
+      }, 500);
+    });
+  </script>
+</body>
+</html>
